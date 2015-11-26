@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include <time.h>
 
 #define SOLUTION "METHINKS IT IS LIKE A WEASEL"
-#define LENGTH 28
 #define NUM_OFFSPRING 50
 
 char random_char() {
@@ -20,45 +20,49 @@ char random_char() {
 	return new_char;
 }
 
-char * random_string() {
+char * random_string(int length) {
 	int i;
-	char * new_string = malloc(sizeof(char[LENGTH + 1]));
+	char * new_string = malloc(sizeof(char[length + 1]));
 
 	if (!new_string) {
 		printf("Failed to allocate memory\n");
 		exit(1);
 	}
 
-	for (i = 0; i < LENGTH; i++) {
+	for (i = 0; i < length; i++) {
 		new_string[i] = random_char();
 	}
 
-	new_string[LENGTH] = '\0';
+	new_string[length] = '\0';
 
 	return new_string;
 }
 
 float compare(char * string1, char * string2) {
-	int i, sum = 0;
+	int i, sum, minlen;
 
-	for (i = 0; i < LENGTH; i++) {
+	minlen = fmin(strlen(string1), strlen(string2));
+
+	sum = 0;
+	for (i = 0; i < minlen; i++) {
 		if (string1[i] == string2[i]) {
 			sum++;
 		}
 	}
 
-	return (float) sum / LENGTH;
+	return (float) sum / minlen;
 }
 
 // Actually mutates string. Like, seriously.
 void mutate(char * child) {
-	int index = ((float) rand() / RAND_MAX) * LENGTH;
+	int len = strlen(child);
+	int index = ((float) rand() / RAND_MAX) * len;
 	char new_char = random_char();
 
 	child[index] = new_char;
 }
 
-char ** reproduce(int num_children, char * parent) {
+char ** reproduce(int num_children, char * parent, int length) {
 	int i;
 	char ** children = malloc(sizeof(char * [num_children]));
 
@@ -68,14 +72,14 @@ char ** reproduce(int num_children, char * parent) {
 	}
 
 	for (i = 0; i < num_children; i++) {
-		children[i] = malloc(sizeof(char[LENGTH + 1]));
+		children[i] = malloc(sizeof(char[length + 1]));
 
 		if (!children[i]) {
 			printf("Could not allocate memory\n");
 			exit(1);
 		}
 
-		strncpy(children[i], parent, LENGTH + 1);
+		strncpy(children[i], parent, length + 1);
 		mutate(children[i]);
 	}
 
@@ -84,7 +88,8 @@ char ** reproduce(int num_children, char * parent) {
 
 int main() {
 	int i, finished = 0, generation = 1;
-	char *parent = random_string();
+	int length = strlen(SOLUTION);
+	char *parent = random_string(length);
 	char **children;
 
 	srand(time(0));
@@ -93,7 +98,7 @@ int main() {
 		int top_index = 0;
 		float top_score = 0.0;
 
-		children = reproduce(NUM_OFFSPRING, parent);
+		children = reproduce(NUM_OFFSPRING, parent, length);
 
 		printf("Generation #%i\n", generation);
 		printf("Children:\n");
@@ -108,7 +113,7 @@ int main() {
 			}
 		}
 
-		strncpy(parent, children[top_index], LENGTH + 1);
+		strncpy(parent, children[top_index], length + 1);
 		printf("\n\nNew parent: %s\n\n", parent);
 
 		for (i = 0; i < NUM_OFFSPRING; i++) {
